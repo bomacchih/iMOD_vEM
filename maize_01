@@ -6,6 +6,52 @@ clip invert raw.mrc inv_raw.mrc   # invert intensities
 xfalign -InputImageFile inv_raw.mrc \
         -OutputTransformFile draft.xf \
         -prexcorr -reduce 2 -filter 0 0.05 0 0.25 -params 6
+=======================
+#or
+# Input  : inv_raw.mrc       # your (inverted) stack
+# Output : draft.xf          # per-slice linear transforms
+
+xfalign \
+  -InputImageFile   inv_raw.mrc \
+  -OutputTransformFile draft.xf \
+  -prexcorr \                     # do an initial cross-correlation pass
+  -xcreduce 4 \                   # bin images 4x during that initial pass (faster, more robust)
+  -xcfilter 0 0.06 0 0.25 \       # gentle band-pass for xcorr (LP ~0.06; HP ~0.25 Nyquist)
+  -reduce 2 \                     # analyze at 2x binning for the main search
+  -matt 0.07 \                    # ignore ~7% border (dirty edges, vignette)
+  -params 6 \                     # search 6 params (shift, rot, mag, anisotropy)
+  -bilinear                       # use bilinear interpolation for better accuracy
+==================================================
+xfalign \
+  -InputImageFile   inv_raw.mrc \
+  -OutputTransformFile draft_ccc.xf \
+  -prexcorr \
+  -xcreduce 4 \
+  -xcfilter 0 0.06 0 0.25 \
+  -reduce 2 \
+  -matt 0.07 \
+  -params 6 \
+  -ccc \                         # optimize using correlation coefficient
+  -local 256 \                   # compute CCC in 256×256 patches (robust to background changes)
+  -bilinear
+==========================================================
+xfalign \
+  -InputImageFile   inv_raw.mrc \
+  -OutputTransformFile warp_draft.xf \
+  -prexcorr \
+  -xcreduce 4 \
+  -xcfilter 0 0.06 0 0.25 \
+  -reduce 2 \
+  -matt 0.07 \
+  -params 6 \
+  -ccc \
+  -local 256 \
+  -warp 256 256 \                # estimate *warping* on 256×256 tiles
+  -shift 12 12 \                 # allow up to ±12 px tile shifts when correlating
+  -wreduce 4 \                   # bin tiles 4× during warp estimation
+  -bilinear
+==========================================================
+
 
 # 2) Manual touch-ups
 midas inv_raw.mrc draft.xf
