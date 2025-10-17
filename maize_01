@@ -1,0 +1,31 @@
+# 0) Make stack and invert
+newstack img_*.tif raw.mrc        # stack into raw
+clip invert raw.mrc inv_raw.mrc   # invert intensities
+
+# 1) Auto alignment (draft correction)
+xfalign -InputImageFile inv_raw.mrc \
+        -OutputTransformFile draft.xf \
+        -prexcorr -reduce 2 -filter 0 0.05 0 0.25 -params 6
+
+# 2) Manual touch-ups
+midas inv_raw.mrc draft.xf
+
+# 3) (Only if warps) convert xf → xg
+xftoxg -InputFile draft.xf -OutputFile aligned.xg
+
+# 4) Apply transforms → aligned volume
+newstack -xform draft.xf   inv_raw.mrc aligned.mrc   # linear only
+# or
+newstack -xform aligned.xg inv_raw.mrc aligned.mrc   # with warps
+
+# 5) Inspect
+3dmod aligned.mrc
+
+ffmpeg -y -framerate 10 -start_number 1 \
+  -i "aligned_stack.tif.%03d.tif" \
+  -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" \
+  -c:v ffv1 -level 3 -g 1 -slices 16 -slicecrc 1 \
+  aligned_Z_lossless.mkv
+
+ffmpeg -y -i aligned_Z_lossless.mkv -vf scale=1920:-2,format=yuv420p -c:v libx264 -preset ultrafast -tune zerolatency -x264-params rc-lookahead=0:keyint=30:min-keyint=30:ref=1:bframes=0 -pix_fmt yuv420p -threads 1 -movflags +faststart aligned_Z_1920.mp4
+
