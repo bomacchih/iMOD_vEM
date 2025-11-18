@@ -3,11 +3,18 @@ ls > file.txt
 
 # Sort by the angle column (field 5), numerically
 sort -t_ -k5,5n file.txt > file_sorted.txt
+# count how many files
+N=$(wc -l < file_sorted.txt)
+
+# build the proper fileinlist
+{
+  echo "$N"
+  awk '{print; print "/"}' file_sorted.txt
+} > fileinlist.txt
+
 
 # Sort by the angle column (field 4), numerically
 sort -t_ -k4,4n file.txt > file_sorted.txt
-
-
 
 # count how many files
 N=$(wc -l < file_sorted.txt)
@@ -17,5 +24,6 @@ N=$(wc -l < file_sorted.txt)
   echo "$N"
   awk '{print; print "/"}' file_sorted.txt
 } > fileinlist.txt
+
 
 newstack -fileinlist fileinlist.txt -output Position_26_2.mrc
