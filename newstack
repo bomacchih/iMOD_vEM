@@ -1,0 +1,12 @@
+ls > file.txt
+
+# count how many files
+N=$(wc -l < file.txt)
+
+# build the proper fileinlist
+{
+  echo "$N"
+  awk '{print; print "/"}' file.txt
+} > fileinlist.txt
+
+newstack -fileinlist fileinlist.txt -output Position_26.mrc
