@@ -1,6 +1,6 @@
 ls > file.txt
 
-
+# for pattern "Position_2_001_0_00_20251106_132629_fractions.mrc"
 # Sort by the angle column (field 5), numerically
 sort -t_ -k5,5n file.txt > file_sorted.txt
 # count how many files
@@ -12,7 +12,7 @@ N=$(wc -l < file_sorted.txt)
   awk '{print; print "/"}' file_sorted.txt
 } > fileinlist.txt
 
-
+# for the pattern "Position_9_2_001_0_00_20251106_162239_fractions.mrc"
 # Sort by the angle column (field 4), numerically
 sort -t_ -k4,4n file.txt > file_sorted.txt
 
@@ -24,6 +24,24 @@ N=$(wc -l < file_sorted.txt)
   echo "$N"
   awk '{print; print "/"}' file_sorted.txt
 } > fileinlist.txt
+
+# for the pattern "Position_1_001[0_00]_Fractions.mrc"
+# Sort by the tilt angle (value inside [X_00]), numerically
+awk -F'[][]' '{
+  # $2 is the text between [ and ]
+  split($2, a, "_")      # a[1] = angle (e.g. -36, -3, 0, 3, 6)
+  print a[1], $0         # prepend angle as a numeric sort key
+}' file.txt | sort -n | cut -d' ' -f2- > file_sorted.txt
+
+# Count how many files
+N=$(wc -l < file_sorted.txt)
+
+# Build the proper fileinlist
+{
+  echo "$N"
+  awk '{print; print "/"}' file_sorted.txt
+} > fileinlist.txt
+
 
 
 newstack -fileinlist fileinlist.txt -output Position_26_2.mrc
