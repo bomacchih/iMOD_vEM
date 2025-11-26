@@ -1,0 +1,90 @@
+# === SETTINGS: edit this part ===
+
+# Root directory that contains the three folders
+$root = "C:\path\to\your\data"   # <<< change this
+
+# The three folders you mentioned
+$folders = @(
+    "Supervisor_20251107_092122",
+    "supervisor_20251022_103728_2",
+    "supervisor_20251022_123104_1"
+)
+
+# Output file
+$outFile = "tiff_frame_summary.csv"
+
+# === CODE STARTS HERE ===
+
+# Load .NET image library
+Add-Type -AssemblyName System.Drawing
+
+$results = foreach ($folder in $folders) {
+    $fullPath = Join-Path $root $folder
+
+    if (-not (Test-Path $fullPath)) {
+        Write-Warning "Folder not found: $fullPath"
+        continue
+    }
+
+    # Find all TIFF files in this folder and its subfolders
+    Get-ChildItem -Path $fullPath -Recurse -Include *.tif, *.tiff -File |
+        ForEach-Object {
+            $file = $_
+            try {
+                $img = [System.Drawing.Image]::FromFile($file.FullName)
+                # Use the first frame dimension (usually pages for TIFF)
+                $frameDim = New-Object System.Drawing.Imaging.FrameDimension($img.FrameDimensionsList[0])
+                $frameCount = $img.GetFrameCount($frameDim)
+                $img.Dispose()
+
+                [PSCustomObject]@{
+                    Folder   = $folder
+                    FileName = $file.Name
+                    FullPath = $file.FullName
+                    Frames   = $frameCount
+                }
+            }
+            catch {
+                [PSCustomObject]@{
+                    Folder   = $folder
+                    FileName = $file.Name
+                    FullPath = $file.FullName
+                    Frames   = "ERROR: $($_.Exception.Message)"
+                }
+            }
+        }
+}
+
+# Save to CSV
+$results | Export-Csv -Path $outFile -NoTypeInformation -Encoding UTF8
+
+Write-Host "Done. Results saved to $outFile"
+
+
+
+
+  ==========================================
+  How to use
+
+Adjust this line to your real root path:
+
+$root = "C:\path\to\your\data"
+
+
+For example, if your folders are under F:\cryoET_data\20251106_tomo\tomo, then:
+
+$root = "F:\cryoET_data\20251106_tomo\tomo"
+
+
+Save as count_tiff_frames.ps1 (or run directly in PowerShell).
+
+Run in PowerShell:
+
+cd "C:\where\you\saved\the\script"
+.\count_tiff_frames.ps1
+
+
+Open tiff_frame_summary.csv in Excel / Notepad.
+You’ll see columns: Folder, FileName, FullPath, Frames.
+
+If you tell me your actual root path (like F:\...), I can plug it directly into a ready-to-paste version.
