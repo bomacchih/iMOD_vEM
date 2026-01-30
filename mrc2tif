@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# Check if an input file was provided
+if [ -z "$1" ]; then
+    echo "Usage: ./mrc2mp4.sh input.mrc [framerate]"
+    exit 1
+fi
+
+INPUT_MRC=$1
+FPS=${2:-10} # Default to 10 fps if not specified
+OUTPUT_MP4="${INPUT_MRC%.*}.mp4"
+TMP_ROOT="tmp_frames_$(date +%s)"
+
+echo "Step 1: Exporting MRC to 8-bit TIFFs with automatic contrast..."
+# -a: Auto-scaling (stretches min/max to 0-255)
+# -s: Converts to 8-bit bytes
+mrc2tif -a -s "$INPUT_MRC" "$TMP_ROOT"
+
+echo "Step 2: Determining output type (Single File vs Sequence)..."
+if [ -f "${TMP_ROOT}.000.tif" ]; then
+    # Case: Numbered sequence
+    FFMPEG_INPUT="-i ${TMP_ROOT}.%03d.tif"
+elif [ -f "${TMP_ROOT}" ]; then
+    # Case: Single multi-page TIFF
+    FFMPEG_INPUT="-i ${TMP_ROOT}"
+else
+    echo "Error: mrc2tif failed to create output."
+    exit 1
+fi
+
+echo "Step 3: Creating MP4 with FFmpeg..."
+ffmpeg -y -framerate "$FPS" $FFMPEG_INPUT \
+    -c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p \
+    -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" \
+    "$OUTPUT_MP4"
+
+echo "Step 4: Cleaning up temporary files..."
+rm -f ${TMP_ROOT}*
+
+echo "Done! Movie created: $OUTPUT_MP4"
+
+
+#using
+./mrc2mp4.sh position_01.mrc
+
+or 
+Specify frame rate (e.g. 20 fps):
+
+./mrc2mp4.sh input.mrc 20
