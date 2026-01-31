@@ -1,5 +1,6 @@
 # 1) keep only Fractions.mrc
-grep -E '^Position_8_.*_Fractions\.mrc$' file.txt > fractions_only.txt
+ls > file.txt
+grep -E '^Position_3_.*_Fractions\.mrc$' file.txt > fractions_only.txt
 
 # 2) sort by angle inside [X_00]
 awk -F'[][]' '
@@ -19,4 +20,4 @@ N=$(wc -l < file_sorted.txt)
 } > fileinlist.txt
 
 
-newstack -fileinlist fileinlist.txt -output Position_26_2.mrc
+newstack -fileinlist fileinlist.txt -output Position_3.mrc
