@@ -1,6 +1,6 @@
 # 1) keep only Fractions.mrc
 ls > file.txt
-grep -E '^Position_3_.*_Fractions\.mrc$' file.txt > fractions_only.txt
+grep -E '^Position_3_.*_Fractions.mrc$' file.txt > fractions_only.txt
 
 # 2) sort by angle inside [X_00]
 awk -F'[][]' '
